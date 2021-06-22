@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "ConsoleApp1": {
+      "commandName": "Project",
+      "commandLineArgs": "-v -e D:\\odo -d roniz.onmicrosoft.com -c ea7fe20a-c32d-48ac-8cb7-174b31dcb9e6 -t 8e9f2fb0-85ca-4bd5-b6dd-071d127066ad -r 'https://channelsurf-cli' -s Xoepp-570814KMZ1d-C0d3pC-~--1G5WMi -u -n odo"
+    }
+  }
+}
