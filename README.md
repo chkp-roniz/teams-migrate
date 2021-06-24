@@ -87,9 +87,9 @@ You must register this application in the Azure Active Directory tenant associat
 * `t`/`tenant` _[string]_ (required) - Directory (tenant) ID
 * `r`/`redirect` _[string]_ (required) - Redirect URI
 * `a`/`authority` _[string]_ - Authentication authority URL. Default 'https://login.microsoftonline.com/{0}'
-* `d`/`domain` _[string]_ (required) - Domain
-* `s`/`secret` _[string]_ (required) - Domain
-* `r`/`readonly` _[boolean]_ - Domain
+* `d`/`domain` _[string]_ (required) - Users domain
+* `s`/`secret` _[string]_ (required) - Client Secret token
+* `r`/`readonly` _[boolean]_ - Readonly mode
 * `v`/`verbose` _[boolean]_ - Verbose
 
 For example:
