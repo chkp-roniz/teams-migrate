@@ -13,7 +13,7 @@ namespace TeamsMigrate.Utils
         private static readonly log4net.ILog log = log4net.LogManager.GetLogger(typeof(FileAttachments));
 
         static int index = 1;
-        public static async Task ArchiveMessageFileAttachments( String selectedTeamId, List<Combined.AttachmentsMapping> combinedAttachmentsMapping, string channelSubFolder, int maxDls = 10)
+        public static async Task ArchiveMessageFileAttachments(String selectedTeamId, List<Combined.AttachmentsMapping> combinedAttachmentsMapping, string channelSubFolder, int maxDls = 10)
         {
             var tasks = new List<Task>();
             index = 1;
@@ -26,7 +26,7 @@ namespace TeamsMigrate.Utils
                 {
                     // await here until there is a room for this task
                     await semaphore.WaitAsync();
-                    tasks.Add(GetAndUploadFileToTeamsChannel(selectedTeamId, semaphore, v, channelSubFolder,progress, combinedAttachmentsMapping.Count));
+                    tasks.Add(GetAndUploadFileToTeamsChannel(selectedTeamId, semaphore, v, channelSubFolder, progress, combinedAttachmentsMapping.Count));
                 }
 
                 // await for the rest of tasks to complete
@@ -34,10 +34,10 @@ namespace TeamsMigrate.Utils
             }
         }
 
-        static async Task GetAndUploadFileToTeamsChannel( String selectedTeamId, SemaphoreSlim semaphore, Combined.AttachmentsMapping combinedAttachmentsMapping, string channelSubFolder, ProgressBar progress, int count)
+        static async Task GetAndUploadFileToTeamsChannel(String selectedTeamId, SemaphoreSlim semaphore, Combined.AttachmentsMapping combinedAttachmentsMapping, string channelSubFolder, ProgressBar progress, int count)
         {
             //string fileId = "";
-            Tuple<string,string> fileIdAndUrl;
+            Tuple<string, string> fileIdAndUrl;
             try
             {
                 if (Program.CmdOptions.ReadOnly)
@@ -92,7 +92,7 @@ namespace TeamsMigrate.Utils
             return;
         }
 
-        public static Tuple<string,string> CheckIfFileExistsOnTeamsChannel( string selectedTeamId, string pathToItem)
+        public static Tuple<string, string> CheckIfFileExistsOnTeamsChannel(string selectedTeamId, string pathToItem)
         {
             var authHelper = new Utils.O365.AuthenticationHelper() { AccessToken = TeamsMigrate.Utils.Auth.AccessToken };
             Microsoft.Graph.GraphServiceClient gcs = new Microsoft.Graph.GraphServiceClient(authHelper);
@@ -107,16 +107,16 @@ namespace TeamsMigrate.Utils
             {
                 fileExistsResult = null;
             }
-            
+
             if (fileExistsResult == null)
             {
-                return new Tuple<string,string>("","");
+                return new Tuple<string, string>("", "");
             }
             log.Debug("Attachment already exists.  We won't replace it. " + pathToItem);
-            return new Tuple<string,string>(fileExistsResult.Id,fileExistsResult.WebUrl);
+            return new Tuple<string, string>(fileExistsResult.Id, fileExistsResult.WebUrl);
         }
 
-        public static async Task<Tuple<string,string>> UploadFileToTeamsChannel( string selectedTeamId, string filePath, string pathToItem) 
+        public static async Task<Tuple<string, string>> UploadFileToTeamsChannel(string selectedTeamId, string filePath, string pathToItem)
         {
             var authHelper = new Utils.O365.AuthenticationHelper() { AccessToken = TeamsMigrate.Utils.Auth.AccessToken };
             Microsoft.Graph.GraphServiceClient gcs = new Microsoft.Graph.GraphServiceClient(authHelper);
@@ -130,9 +130,9 @@ namespace TeamsMigrate.Utils
                 return new Tuple<string, string>(fileExists.Item1, fileExists.Item2);
             }
 
-            if (fileExists.Item1 != "") 
+            if (fileExists.Item1 != "")
             {
-                return new Tuple<string,string>(fileExists.Item1,fileExists.Item2);
+                return new Tuple<string, string>(fileExists.Item1, fileExists.Item2);
             }
 
             Microsoft.Graph.UploadSession uploadSession = null;
@@ -142,7 +142,7 @@ namespace TeamsMigrate.Utils
 
             try
             {
-                log.DebugFormat("Trying to upload file {0} ({1}) ",pathToItem, filePath);
+                log.DebugFormat("Trying to upload file {0} ({1}) ", pathToItem, filePath);
                 using (FileStream fs = new FileStream(filePath, FileMode.Open, FileAccess.Read))
                 {
                     //upload a file in a single shot.  this is great if all files are below the allowed maximum size for a single shot upload.
@@ -176,17 +176,17 @@ namespace TeamsMigrate.Utils
                         }
                     }
                     log.Debug("Upload of attachment to MS Teams completed " + pathToItem);
-                    log.Debug("SPo ID is " + itemResult.Id+" URL: "+itemResult.WebUrl);
-                    return new Tuple<string,string>(itemResult.Id, itemResult.WebUrl);
+                    log.Debug("SPo ID is " + itemResult.Id + " URL: " + itemResult.WebUrl);
+                    return new Tuple<string, string>(itemResult.Id, itemResult.WebUrl);
                 }
             }
             catch (Exception ex)
             {
                 log.Error("Attachment could not be uploaded");
-                log.Debug("Failure",ex);
+                log.Debug("Failure", ex);
             }
 
-            return new Tuple<string, string>("","");
+            return new Tuple<string, string>("", "");
         }
     }
 }

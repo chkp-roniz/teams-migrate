@@ -116,7 +116,7 @@ namespace TeamsMigrate.Utils
                     continue;
                 }
 
-                if(v.membershipType.Equals("private") && (v.members == null || v.members.Count.Equals(0)))
+                if (v.membershipType.Equals("private") && (v.members == null || v.members.Count.Equals(0)))
                 {
                     i++;
                     log.DebugFormat("Channel {0} has no members. Skipping...", v.channelName);
@@ -169,7 +169,7 @@ namespace TeamsMigrate.Utils
                     }
                 }
 
-                log.InfoFormat("Creating channel '{0}' ('{1}') [{2}] ({3} out of {4})", v.channelName , v.channelDescription,v.membershipType, i++, slackChannels.Count);
+                log.InfoFormat("Creating channel '{0}' ('{1}') [{2}] ({3} out of {4})", v.channelName, v.channelDescription, v.membershipType, i++, slackChannels.Count);
 
                 MsTeams.Channel createdMsTeamsChannel = CreateChannel(v, teamId);
                 if (createdMsTeamsChannel != null)
@@ -221,7 +221,7 @@ namespace TeamsMigrate.Utils
                     new StringContent(createTeamsChannelPostData, Encoding.UTF8, "application/json")).Result;
 
             log.Debug(httpResponseMessage.Content.ReadAsStringAsync().Result);
-            
+
             if (!httpResponseMessage.IsSuccessStatusCode)
             {
                 log.Error("Failed to create channel '" + channel.channelName + "'");
@@ -320,6 +320,8 @@ namespace TeamsMigrate.Utils
 
             try
             {
+                // wait 5 sec for creation
+                Thread.Sleep(5000);
                 var result = gcs.Groups[teamId].Drive.Root.Children.Request().AddAsync(driveItem).Result;
                 log.Debug("Folder ID is " + result.Id + " with path " + result.WebUrl);
                 return result.Id;
@@ -327,11 +329,14 @@ namespace TeamsMigrate.Utils
             catch (Exception ex)
             {
                 log.Error("Folder creation failure. Retry");
-                log.Debug("Failure", ex);
+                log.Error("Failure", ex);
+                Console.WriteLine(ex.ToString());
             }
 
             try
             {
+                // wait 5 sec for creation
+                Thread.Sleep(5000);
                 var result = gcs.Groups[teamId].Drive.Root.Children.Request().AddAsync(driveItem).Result;
                 log.Debug("Folder ID is " + result.Id + " with path " + result.WebUrl);
                 return result.Id;
@@ -339,7 +344,7 @@ namespace TeamsMigrate.Utils
             catch (Exception ex)
             {
                 log.Error("Folder creation failure");
-                log.Debug("Failure", ex);
+                log.Error("Failure", ex);
                 return "";
             }
         }
@@ -371,7 +376,7 @@ namespace TeamsMigrate.Utils
             {
                 log.Error("Failed to complete channel migration");
                 log.Debug("Failure", ex);
-                
+
             }
         }
 

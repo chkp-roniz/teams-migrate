@@ -20,7 +20,7 @@ namespace TeamsMigrate.Utils
 
         private static Dictionary<string, string> SlackToTeamsIdsMapping = new Dictionary<string, string>();
         public static void ScanMessagesByChannel(List<Models.Combined.ChannelsMapping> channelsMapping, string basePath,
-            List<ViewModels.SimpleUser> slackUserList,  String selectedTeamId, bool copyFileAttachments)
+            List<ViewModels.SimpleUser> slackUserList, String selectedTeamId, bool copyFileAttachments)
         {
             int i = 1;
             foreach (var channel in channelsMapping)
@@ -28,12 +28,13 @@ namespace TeamsMigrate.Utils
                 List<Models.Combined.AttachmentsMapping> channelAttachmentsToUpload = null;
                 try
                 {
-                    log.InfoFormat("Migrating messages in channel {0} ({1} ouf of {2}) ",channel.slackChannelName,i++,channelsMapping.Count);
+                    log.InfoFormat("Migrating messages in channel {0} ({1} ouf of {2}) ", channel.slackChannelName, i++, channelsMapping.Count);
                     channelAttachmentsToUpload = GetAndUploadMessages(channel, basePath, slackUserList, selectedTeamId, copyFileAttachments);
-                }catch(Exception ex)
+                }
+                catch (Exception ex)
                 {
                     log.Error("Failed to upload messages");
-                    log.Debug("Failure", ex);
+                    log.Error("Failure", ex);
                 }
             }
         }
@@ -48,11 +49,11 @@ namespace TeamsMigrate.Utils
         }
 
         static List<Models.Combined.AttachmentsMapping> GetAndUploadMessages(Models.Combined.ChannelsMapping channelsMapping, string basePath,
-            List<ViewModels.SimpleUser> slackUserList,  String selectedTeamId, bool copyFileAttachments)
+            List<ViewModels.SimpleUser> slackUserList, String selectedTeamId, bool copyFileAttachments)
         {
             var messageList = new List<ViewModels.SimpleMessage>();
             messageList.Clear();
-            
+
             var messageListJsonSource = new JArray();
             messageListJsonSource.Clear();
 
@@ -81,9 +82,13 @@ namespace TeamsMigrate.Utils
                                 // I'm too lazy right now for strongly typed classes
 
                                 // deal with message basics: when, body, who
+                                var messageToken = obj.SelectToken("ts");
 
-
+                                // skip canvas_in_the_conversation.json without TS value
+                                if (messageToken == null)
+                                    continue;
                                 var messageTs = obj.SelectToken("ts").ToString();
+
                                 var messageText = (string)obj.SelectToken("text");
                                 if (messageText.EndsWith("has joined the channel") || messageText.EndsWith("has joined the group"))
                                     continue;
@@ -92,7 +97,7 @@ namespace TeamsMigrate.Utils
                                 string rootId = (string)obj.SelectToken("thread_ts");
 
                                 var messageSender = Utils.Messages.FindMessageSender(obj, slackUserList);
-
+                                //Console.WriteLine("Message sender: " + messageSender);
                                 // create a list of attachments to upload
                                 // deal with "attachments" that are files
                                 // specifically, files hosted by Slack
@@ -111,6 +116,12 @@ namespace TeamsMigrate.Utils
                                         var fileId = (string)f.SelectToken("id");
                                         var fileMode = (string)f.SelectToken("mode");
                                         var fileName = (string)f.SelectToken("name");
+
+                                        // if the message is empty, Teams unable to display, set it to "Empty Message" to make it visible
+                                        if (messageText == "")
+                                        {
+                                            messageText = fileName;
+                                        }
 
                                         if (fileMode != "external" && fileId != null && fileUrl != null)
                                         {
@@ -212,32 +223,32 @@ namespace TeamsMigrate.Utils
                                 }
 
                                 // do some stuff with slack message threading at some point
-
-                                messageList.Add(new ViewModels.SimpleMessage
+                                var messageObj = new ViewModels.SimpleMessage
                                 {
                                     id = messageId,
                                     text = HandleContent(messageText, slackUserList),
-                                    ts = UnixTimeStampToDateTime(Convert.ToDouble(messageTs)).ToUniversalTime()
-                             .ToString("yyyy'-'MM'-'dd'T'HH':'mm':'ss'.'ffffff'Z'"),
+                                    ts = UnixTimeStampToDateTime(Convert.ToDouble(messageTs)).ToUniversalTime().ToString("yyyy'-'MM'-'dd'T'HH':'mm':'ss'.'ffffff'Z'"),
                                     //ts = messageTs,
                                     user = messageSender,
                                     userId = Users.GetOrCreateId(messageSender, slackUserList, Program.CmdOptions.Domain),
                                     fileAttachments = fileAttachments,
                                     attachments = attachmentsList,
                                     rootId = rootId,
-                                }); ;
+                                };
+                                //Console.WriteLine("Message object: " + JsonConvert.SerializeObject(messageObj));
+                                messageList.Add(messageObj);
                             }
 
                         }
                     }
                 }
             }
-            if(copyFileAttachments)
+            if (copyFileAttachments)
             {
 
-                Utils.FileAttachments.ArchiveMessageFileAttachments(selectedTeamId,attachmentsToUpload,"fileattachments").Wait();
+                Utils.FileAttachments.ArchiveMessageFileAttachments(selectedTeamId, attachmentsToUpload, "fileattachments").Wait();
 
-                foreach(var messageItem in messageList)
+                foreach (var messageItem in messageList)
                 {
                     foreach (ViewModels.SimpleMessage.FileAttachment attachment in messageItem.fileAttachments)
                     {
@@ -291,8 +302,8 @@ namespace TeamsMigrate.Utils
             // Match the regular expression pattern against a text string.
             match = reg.Match(messageText);
             for (match = reg.Match(messageText); match.Success; match = match.NextMatch())
-            {   
-                var url = match.Value.TrimEnd( '>').TrimStart('<');
+            {
+                var url = match.Value.TrimEnd('>').TrimStart('<');
                 string[] href = url.Split("|");
                 messageText = messageText.Replace(match.Value, String.Format("<a href='{0}'>{1}</a>", href.Length > 0 ? href[0] : url, href.Length > 1 ? href[1] : url));
                 log.DebugFormat("Found URL in message {0}", messageText);
@@ -301,7 +312,7 @@ namespace TeamsMigrate.Utils
             return messageText;
         }
 
-        private static void ImportMessages(string basePath, Combined.ChannelsMapping channelsMapping, List<ViewModels.SimpleMessage> messageList,  string selectedTeamId)
+        private static void ImportMessages(string basePath, Combined.ChannelsMapping channelsMapping, List<ViewModels.SimpleMessage> messageList, string selectedTeamId)
         {
             int i = 1;
             using (var progress = new ProgressBar("Importing messages"))
@@ -341,7 +352,7 @@ namespace TeamsMigrate.Utils
                     }
                 }
                 var pathToItem = "/" + channelsMapping.displayName + "/channelsurf/" + "messages/json" + "/" + filenameToAdd;
-                Utils.FileAttachments.UploadFileToTeamsChannel( selectedTeamId, Path.Combine(basePath, channelsMapping.slackChannelName, filenameToAdd), pathToItem).Wait();
+                Utils.FileAttachments.UploadFileToTeamsChannel(selectedTeamId, Path.Combine(basePath, channelsMapping.slackChannelName, filenameToAdd), pathToItem).Wait();
             }
             return;
         }
@@ -365,15 +376,20 @@ namespace TeamsMigrate.Utils
             if (String.IsNullOrEmpty(message.rootId))
             {
                 url = O365.MsGraphBetaEndpoint + "teams/" + teamId + "/channels/" + channelId + "/messages";
+                //Console.WriteLine("URL: " + url);
             }
             else
             {
-                if(SlackToTeamsIdsMapping.ContainsKey(message.rootId))
-                    url = O365.MsGraphBetaEndpoint + "teams/" + teamId + "/channels/" + channelId + "/messages/"+ SlackToTeamsIdsMapping[message.rootId]+ "/replies";
+                if (SlackToTeamsIdsMapping.ContainsKey(message.rootId))
+                {
+                    url = O365.MsGraphBetaEndpoint + "teams/" + teamId + "/channels/" + channelId + "/messages/" + SlackToTeamsIdsMapping[message.rootId] + "/replies";
+                    //Console.WriteLine("URL: " + url);
+                }
                 else
                 {
                     log.Debug("Missing key: " + message.rootId);
                     url = O365.MsGraphBetaEndpoint + "teams/" + teamId + "/channels/" + channelId + "/messages";
+                    //Console.WriteLine("URL: " + url);
                 }
             }
 
@@ -400,6 +416,10 @@ namespace TeamsMigrate.Utils
                         Thread.Sleep(2000);
                         ImportExternalMessage(teamId, channelId, message, false);
                     }
+                    else
+                    {
+                        Console.WriteLine("Failed to import message " + httpResponseMessage.Content.ReadAsStringAsync().Result);
+                    }
                     return;
 
                 }
@@ -422,6 +442,7 @@ namespace TeamsMigrate.Utils
         static string FindMessageSender(JObject obj, List<ViewModels.SimpleUser> slackUserList)
         {
             var user = (string)obj.SelectToken("user");
+            //Console.WriteLine("User: " + user);
             if (!String.IsNullOrEmpty(user))
             {
                 if (user != "USLACKBOT")

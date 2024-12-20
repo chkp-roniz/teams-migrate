@@ -35,20 +35,20 @@ namespace TeamsMigrate
             string slackArchiveBasePath = "";
             string slackArchiveTempPath = "";
             string channelsPath = "";
- 
+
 
             Console.CancelKeyPress += delegate (object sender, ConsoleCancelEventArgs e)
             {
 
-                    try
-                    {
-                        Utils.Files.CleanUpTempDirectoriesAndFiles(slackArchiveTempPath);
-                    }
-                    catch (Exception ex)
-                    {
-                        log.Error("Failed to complete cleanup");
-                        log.Debug("Failure",ex);
-                    }
+                try
+                {
+                    Utils.Files.CleanUpTempDirectoriesAndFiles(slackArchiveTempPath);
+                }
+                catch (Exception ex)
+                {
+                    log.Error("Failed to complete cleanup");
+                    log.Debug("Failure", ex);
+                }
 
             };
 
@@ -123,7 +123,9 @@ namespace TeamsMigrate
             var slackUserList = Utils.Users.ScanUsers(Path.Combine(slackArchiveBasePath, "users.json"));
 
             teamName = String.IsNullOrEmpty(CmdOptions.TeamsName) ?
-                "Archive " + teamName + " Slack " + DateTime.Now.ToUniversalTime() : "Archive " + CmdOptions.TeamsName + " Slack " + DateTime.Now.ToUniversalTime();
+                "Archive_" + teamName + "_Slack_" + DateTime.Now.ToUniversalTime() : "Archive_" + CmdOptions.TeamsName + "_Slack+" + DateTime.Now.ToUniversalTime();
+            teamName = teamName.Replace("/", "");
+            teamName = teamName.Replace(" ", "_");
 
             //Creating new team in MS Teams
             var selectedTeamId = Utils.Channels.CreateNewTeam(teamName);
@@ -137,7 +139,7 @@ namespace TeamsMigrate
             {
                 //Scanning messages in Slack channels
                 Utils.Messages.ScanMessagesByChannel(msTeamsChannelsWithSlackProps, slackArchiveTempPath, slackUserList, selectedTeamId, CmdOptions.MigrateFiles);
-   
+
             }
 
             if (!Program.CmdOptions.ReadOnly)
