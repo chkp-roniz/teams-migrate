@@ -38,7 +38,7 @@ namespace TeamsMigrate.Utils
                         var userId = (string)obj.SelectToken("id");
                         var emailToken = obj.SelectToken("profile.email");
 
-                        // if user has no email, use @ as a placeholder
+                        // if user has no email, use name instead
                         var email = emailToken != null ? (string)emailToken : (string)obj.SelectToken("name");
 
                         var is_bot = (bool)obj.SelectToken("is_bot");

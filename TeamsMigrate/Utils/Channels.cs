@@ -320,6 +320,8 @@ namespace TeamsMigrate.Utils
 
             try
             {
+                // wait 5 sec for creation
+                Thread.Sleep(5000);
                 var result = gcs.Groups[teamId].Drive.Root.Children.Request().AddAsync(driveItem).Result;
                 log.Debug("Folder ID is " + result.Id + " with path " + result.WebUrl);
                 return result.Id;
@@ -333,6 +335,8 @@ namespace TeamsMigrate.Utils
 
             try
             {
+                // wait 5 sec for creation
+                Thread.Sleep(5000);
                 var result = gcs.Groups[teamId].Drive.Root.Children.Request().AddAsync(driveItem).Result;
                 log.Debug("Folder ID is " + result.Id + " with path " + result.WebUrl);
                 return result.Id;

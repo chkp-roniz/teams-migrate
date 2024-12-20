@@ -117,6 +117,12 @@ namespace TeamsMigrate.Utils
                                         var fileMode = (string)f.SelectToken("mode");
                                         var fileName = (string)f.SelectToken("name");
 
+                                        // if the message is empty, Teams unable to display, set it to "Empty Message" to make it visible
+                                        if (messageText == "")
+                                        {
+                                            messageText = fileName;
+                                        }
+
                                         if (fileMode != "external" && fileId != null && fileUrl != null)
                                         {
                                             log.Debug("Message attachment found with ID " + fileId);
