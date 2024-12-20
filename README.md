@@ -89,12 +89,13 @@ You must register this application in the Azure Active Directory tenant associat
 * `a`/`authority` _[string]_ - Authentication authority URL. Default 'https://login.microsoftonline.com/{0}'
 * `d`/`domain` _[string]_ (required) - Users domain
 * `s`/`secret` _[string]_ (required) - Client Secret token
-* `r`/`readonly` _[boolean]_ - Readonly mode
+* `o`/`readonly` _[boolean]_ - Readonly mode
+* `u`/`users` _[boolean]_ - Create or restore missing users
 * `v`/`verbose` _[boolean]_ - Verbose
 
 For example:
 ```
-TeamsMigrate.exe -v -e myworkspace.zip -d myworkspace.onmicrosoft.com -c <client id> -t <tenant> -r 'https://migrator-cli'
+TeamsMigrate.exe -v -e myworkspace.zip -d myworkspace.onmicrosoft.com -c <client id> -t <tenant> -r 'https://migrator-cli' -s <secret> -u true -o
 ```
 
 ## Questions and comments
