@@ -19,7 +19,7 @@ namespace TeamsMigrate.Utils
 
         private static HashSet<string> MissingUsers = new HashSet<string>();
 
-        private static Dictionary<string,string> DeletedUsers { get; set; }
+        private static Dictionary<string, string> DeletedUsers { get; set; }
 
         public static List<ViewModels.SimpleUser> ScanUsers(string combinedPath)
         {
@@ -35,13 +35,15 @@ namespace TeamsMigrate.Utils
                         JObject obj = JObject.Load(reader);
 
                         // SelectToken returns null not an empty string if nothing is found
-
                         var userId = (string)obj.SelectToken("id");
-                        var email = (string)obj.SelectToken("profile.email");
+                        var emailToken = obj.SelectToken("profile.email");
+
+                        // if user has no email, use name instead
+                        var email = emailToken != null ? (string)emailToken : (string)obj.SelectToken("name");
+
                         var is_bot = (bool)obj.SelectToken("is_bot");
                         var name = !is_bot ? email.Split("@")[0] : (string)obj.SelectToken("name");
                         var real_name = (string)obj.SelectToken("profile.real_name_normalized");
-                        
 
                         log.DebugFormat("Scanned user {0} ({1}) {2}", name, email, (string)obj.SelectToken("real_name"));
 
@@ -53,7 +55,6 @@ namespace TeamsMigrate.Utils
                             real_name = real_name,
                             is_bot = is_bot,
                         });
-
                     }
                 }
             }
@@ -69,7 +70,7 @@ namespace TeamsMigrate.Utils
 
         internal static string GetUserId(string id)
         {
-            
+
             Helpers.httpClient.DefaultRequestHeaders.Clear();
             Helpers.httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", TeamsMigrate.Utils.Auth.AccessToken);
             Helpers.httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
@@ -147,7 +148,7 @@ namespace TeamsMigrate.Utils
                 return "";
             }
 
-            
+
 
             MissingUsers.Add(userPrincipalName);
             dynamic user = JObject.Parse(httpResponseMessage.Content.ReadAsStringAsync().Result);
@@ -163,7 +164,7 @@ namespace TeamsMigrate.Utils
             Helpers.httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", TeamsMigrate.Utils.Auth.AccessToken);
             Helpers.httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
- 
+
             var url = O365.MsGraphEndpoint + "directory/deletedItems/" + userId + "/restore";
             log.Debug("POST " + url);
 
@@ -191,7 +192,7 @@ namespace TeamsMigrate.Utils
             return existUser;
         }
 
-        private static Dictionary<string,string> GetDeletedUsers()
+        private static Dictionary<string, string> GetDeletedUsers()
         {
             Dictionary<string, string> deleted = new Dictionary<string, string>();
 
@@ -211,7 +212,7 @@ namespace TeamsMigrate.Utils
             if (!httpResponseMessage.IsSuccessStatusCode)
             {
                 log.Debug("Failed to retrive deleted users");
-                return deleted; 
+                return deleted;
             }
 
             dynamic users = JObject.Parse(httpResponseMessage.Content.ReadAsStringAsync().Result);
@@ -220,15 +221,15 @@ namespace TeamsMigrate.Utils
                 string userPrincipalName = user.userPrincipalName;
                 string id = user.id;
                 string principalName = userPrincipalName.Replace(id.Replace("-", ""), "");
-                log.DebugFormat("Found deleted user: {0}({1})",principalName,id);
-                if(!deleted.ContainsKey(principalName))
+                log.DebugFormat("Found deleted user: {0}({1})", principalName, id);
+                if (!deleted.ContainsKey(principalName))
                     deleted.Add(principalName, id);
             }
 
             return deleted;
         }
 
-        public static string GetOrCreateId(string messageSender, List<SimpleUser> slackUserList, string domain )
+        public static string GetOrCreateId(string messageSender, List<SimpleUser> slackUserList, string domain)
         {
             try
             {
@@ -245,10 +246,11 @@ namespace TeamsMigrate.Utils
                     simpleUser.name = messageSender;
                 }
                 string id = GetOrCreateId(simpleUser, domain);
+                //Console.WriteLine("id: " + id);
                 users.Add(messageSender, id);
                 return id;
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 log.Debug("Failed to get user");
                 log.Debug("Failure", ex);
@@ -256,7 +258,7 @@ namespace TeamsMigrate.Utils
             }
         }
 
-        internal static void AddOwner(string selectedTeamId,string userId)
+        internal static void AddOwner(string selectedTeamId, string userId)
         {
             Helpers.httpClient.DefaultRequestHeaders.Clear();
             Helpers.httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", TeamsMigrate.Utils.Auth.AccessToken);
@@ -306,7 +308,7 @@ namespace TeamsMigrate.Utils
 
                 if (!httpResponseMessage.IsSuccessStatusCode)
                 {
-                    log.Error("Failed to delete "+user);
+                    log.Error("Failed to delete " + user);
                     log.Debug(httpResponseMessage.Content.ReadAsStringAsync().Result);
                 }
             }
@@ -358,7 +360,7 @@ namespace TeamsMigrate.Utils
             newUserObject.Add("@odata.type", "#microsoft.graph.aadUserConversationMember");
             newUserObject.Add("user@odata.bind", "https://graph.microsoft.com/v1.0/users('" + userId + "')");
 
-            var url = O365.MsGraphEndpoint + "teams/" + selectedTeamId + "/channels/"+channelId + "/members";
+            var url = O365.MsGraphEndpoint + "teams/" + selectedTeamId + "/channels/" + channelId + "/members";
             log.Debug("POST " + url);
 
             var addUserToTeamPostData = JsonConvert.SerializeObject(newUserObject);
